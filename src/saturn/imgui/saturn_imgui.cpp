@@ -488,6 +488,17 @@ pthread_t capture_thread;
 int renderer_current_frame, renderer_num_frames = 0;
 bool ui_only_frame = false;
 
+bool ffmpeg_installed = true;
+bool clipboard_enabled = false;
+
+bool is_wayland() {
+#ifdef _WIN32
+    return false;
+#else
+    return getenv("WAYLAND_DISPLAY");
+#endif
+}
+
 void saturn_write_screenshot(std::string dest, void* image) {
     if (dest.empty()) { // clipboard
 #ifdef _WIN32
@@ -522,7 +533,7 @@ void saturn_write_screenshot(std::string dest, void* image) {
         int outlen;
         unsigned char* data = pngutils_write_png_to_mem((unsigned char*)image, 0, videores[0], videores[1], 4, &outlen);
         FILE* command;
-        if (getenv("WAYLAND_CLIPBOARD")) command = popen("wl-copy --type image/png", "w");
+        if (is_wayland()) command = popen("wl-copy --type image/png", "w");
         else command = popen("xclip -selection clipboard -t image/png -i", "w");
         fwrite(data, outlen, 1, command);
         fclose(command);
@@ -560,6 +571,7 @@ void* saturn_capture_screenshot(void* image) {
 }
 
 void saturn_imgui_capture_next_frame(std::string dest) {
+    if (dest == "" && !clipboard_enabled) return;
     capture_destination_file = dest;
     capturing_video = true;
     keyframe_playing = false;
@@ -599,7 +611,6 @@ bool saturn_imgui_is_capturing_transparent_video() {
 
 void saturn_imgui_set_frame_buffer(void* fb, bool do_capture) {
     framebuffer = fb;
-    int test = sizeof(void);
     if (!processing_frame && !ui_only_frame && capturing_video && (do_capture || sixty_fps_enabled) && capture_buffer == 0) {
         uint64_t tex_size = (uint64_t)videores[0] * (uint64_t)videores[1] * 4;
         unsigned char* image = (unsigned char*)malloc(tex_size);
@@ -772,7 +783,15 @@ bool does_command_exist(std::string command) {
     return false;
 }
 
-bool ffmpeg_installed = true;
+bool can_write_to_clipboard() {
+#ifdef _WIN32
+    return true;
+#else
+    if (is_wayland()) return does_command_exist("wl-copy");
+    else return does_command_exist("xclip");
+#endif
+}
+
 #ifdef _WIN32
 std::thread ffmpeg_download_thread;
 double ffmpeg_download_progress = 0;
@@ -930,6 +949,7 @@ void saturn_imgui_init() {
     saturn_load_project_list();
 
     ffmpeg_installed = does_command_exist("ffmpeg");
+    clipboard_enabled = can_write_to_clipboard();
 
     saturn_check_update();
 }
@@ -1557,6 +1577,11 @@ void saturn_imgui_update() {
             static bool save_to_clipboard = false;
             std::vector<std::string> video_formats = video_renderer_get_formats(ffmpeg_installed);
             ImGui::Separator();
+            if (!clipboard_enabled) {
+                if (is_wayland()) ImGui::Text("Install the wl-clipboard package");
+                else ImGui::Text("Install the xclip package");
+                ImGui::Text("to use the clipboard");
+            }
             if (ImGui::Button("Capture Screenshot")) {
                 bool do_capture = false;
                 std::string dest = "";
@@ -1569,7 +1594,9 @@ void saturn_imgui_update() {
                 if (do_capture) saturn_imgui_capture_next_frame(dest);
             }
             ImGui::SameLine();
+            ImGui::BeginDisabled(!clipboard_enabled);
             ImGui::Checkbox("Clipboard", &save_to_clipboard);
+            ImGui::EndDisabled();
             ImGui::BeginDisabled(k_frame_keys.empty());
             if (ImGui::Button("Render Video")) {
                 capture_destination_file = save_file_dialog("Save Video", video_formats);
