@@ -35,6 +35,8 @@ enum {
     KEY_COLOR,
 };
 
+extern void saturn_imgui_capture_next_frame(std::string dest);
+
 extern void saturn_keyframe_popout(std::string id);
 extern void saturn_keyframe_popout(std::vector<std::string> id);
 extern void saturn_keyframe_popout_next_line(std::string id);

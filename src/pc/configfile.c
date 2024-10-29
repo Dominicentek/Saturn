@@ -81,7 +81,7 @@ unsigned int configRumbleStrength = 50;
 // Saturn
 unsigned int configKeyFreeze[MAX_BINDS]     = { 0x0021,   0x100B,     VK_INVALID };
 unsigned int configKeyPlayAnim[MAX_BINDS]   = { 0x0018,   0x100D,     VK_INVALID };
-unsigned int configKeyLoopAnim[MAX_BINDS]   = { 0x0017,   0x100E,     VK_INVALID };
+unsigned int configKeyScreenshot[MAX_BINDS] = { 0x003C,   VK_INVALID, VK_INVALID };
 unsigned int configKeyStopInpRec[MAX_BINDS] = { 0x0044,   VK_INVALID, VK_INVALID };
 #ifdef EXTERNAL_DATA
 bool configPrecacheRes = true;
@@ -195,8 +195,8 @@ static const struct ConfigOption options[] = {
     #endif
     {.name = "key_freeze",           .type = CONFIG_TYPE_BIND, .uintValue = configKeyFreeze},
     {.name = "key_anim_play",        .type = CONFIG_TYPE_BIND, .uintValue = configKeyPlayAnim},
-    {.name = "key_anim_pause",       .type = CONFIG_TYPE_BIND, .uintValue = configKeyLoopAnim},
-    { .name = "key_inprec_stop",     .type = CONFIG_TYPE_BIND, .uintValue = configKeyStopInpRec},
+    {.name = "key_screenshot",       .type = CONFIG_TYPE_BIND, .uintValue = configKeyScreenshot},
+    {.name = "key_inprec_stop",      .type = CONFIG_TYPE_BIND, .uintValue = configKeyStopInpRec},
     {.name = "editor_theme",         .type = CONFIG_TYPE_UINT, .uintValue = &configEditorTheme},
     {.name = "editor_fast_apply",    .type = CONFIG_TYPE_BOOL, .boolValue = &configEditorFastApply},
     {.name = "editor_auto_model_cc", .type = CONFIG_TYPE_BOOL, .boolValue = &configEditorAutoModelCc},

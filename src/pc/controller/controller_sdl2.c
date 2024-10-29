@@ -90,7 +90,7 @@ static void controller_sdl_bind(void) {
 
     controller_add_binds(U_JPAD, configKeyFreeze);
     controller_add_binds(L_JPAD, configKeyPlayAnim);
-    controller_add_binds(R_JPAD, configKeyLoopAnim);
+    controller_add_binds(R_JPAD, configKeyScreenshot);
     controller_add_binds(D_JPAD, configKeyStopInpRec);
 }
 

@@ -335,6 +335,9 @@ void saturn_update() {
             if (gPlayer1Controller->buttonPressed & D_JPAD) {
                 saturn_actor_stop_recording();
             }
+            if (gPlayer1Controller->buttonPressed & R_JPAD) {
+                saturn_imgui_capture_next_frame("");
+            }
         }
     }
 

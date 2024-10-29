@@ -321,8 +321,10 @@ void ssettings_imgui_update() {
                 ImGui::EndTabItem();
             }
             if (ImGui::BeginTabItem("Editor")) {
-                ImGui::Text("Input Recording");
-                SaturnKeyBind("Stop", configKeyStopInpRec, "bStopInpRec", 3*26);
+                SaturnKeyBind("Stop Input Record", configKeyStopInpRec, "bStopInpRec", 3*26);
+                SaturnKeyBind("Screenshot", configKeyScreenshot, "bScreenshot", 3*27);
+                ImGui::SameLine();
+                imgui_bundled_help_marker("The screenshot goes to the clipboard.");
                 ImGui::Text("Camera");
                 if (ImGui::TreeNode("Mouse")) {
                     ImGui::Checkbox("X###1", &configCamCtrlMousePanInvX);

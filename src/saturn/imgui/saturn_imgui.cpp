@@ -420,6 +420,7 @@ void imgui_update_theme() {
 }
 
 int videores[] = { 1920, 1080 };
+int capture_buffer = 0;
 bool capturing_video = false;
 bool orthographic_mode = false;
 bool processing_frame = false;
@@ -487,6 +488,51 @@ pthread_t capture_thread;
 int renderer_current_frame, renderer_num_frames = 0;
 bool ui_only_frame = false;
 
+void saturn_write_screenshot(std::string dest, void* image) {
+    if (dest.empty()) { // clipboard
+#ifdef _WIN32
+        BITMAPV5HEADER header = {
+            .bV5Size = sizeof(BITMAPV5HEADER),
+            .bV5Width = videores[0],
+            .bV5Height = videores[1],
+            .bV5Planes = 1,
+            .bV5BitCount = 32,
+            .bV5Compression = BI_BITFIELDS,
+            .bV5RedMask   = 0x000000FF,
+            .bV5GreenMask = 0x0000FF00,
+            .bV5BlueMask  = 0x00FF0000,
+            .bV5AlphaMask = 0xFF000000,
+            .bV5CSType = *(DWORD*)"Win ",
+        };
+        HGLOBAL global = GlobalAlloc(GMEM_MOVEABLE, sizeof(BITMAPV5HEADER) + videores[0] * videores[1] * 4);
+        if (global) {
+            BYTE* buffer = (BYTE*)GlobalLock(global);
+            if (buffer) {
+                CopyMemory(buffer, &header, sizeof(BITMAPV5HEADER));
+                CopyMemory(buffer + sizeof(BITMAPV5HEADER), image, videores[0] * videores[1] * 4);
+                GlobalUnlock(global);
+            }
+            if (OpenClipboard(NULL)) {
+                EmptyClipboard();
+                SetClipboardData(CF_DIBV5, global);
+                CloseClipboard();
+            }
+        }
+#else
+        int outlen;
+        unsigned char* data = pngutils_write_png_to_mem((unsigned char*)image, 0, videores[0], videores[1], 4, &outlen);
+        FILE* command;
+        if (getenv("WAYLAND_CLIPBOARD")) command = popen("wl-copy --type image/png", "w");
+        else command = popen("xclip -selection clipboard -t image/png -i", "w");
+        fwrite(data, outlen, 1, command);
+        fclose(command);
+        free(data);
+#endif
+        return;
+    }
+    pngutils_write_png(dest.c_str(), videores[0], videores[1], 4, image, 0);
+}
+
 void* saturn_capture_screenshot(void* image) {
     processing_frame = true;
     if (renderer_num_frames != 0) {
@@ -499,18 +545,26 @@ void* saturn_capture_screenshot(void* image) {
         }
         k_previous_frame = k_current_frame;
         if (stop_capture || renderer_current_frame == renderer_num_frames) {
+            video_renderer_finalize();
             capturing_video = false;
             stop_capture = false;
-            video_renderer_finalize();
         }
     }
     else {
+        saturn_write_screenshot(capture_destination_file, image);
         capturing_video = false;
-        pngutils_write_png(capture_destination_file.c_str(), (int)videores[0], (int)videores[1], 4, image, 0);
     }
     free(image);
     processing_frame = false;
     return NULL;
+}
+
+void saturn_imgui_capture_next_frame(std::string dest) {
+    capture_destination_file = dest;
+    capturing_video = true;
+    keyframe_playing = false;
+    renderer_num_frames = 0;
+    capture_buffer = 2;
 }
 
 bool saturn_imgui_is_capturing_video() {
@@ -545,7 +599,8 @@ bool saturn_imgui_is_capturing_transparent_video() {
 
 void saturn_imgui_set_frame_buffer(void* fb, bool do_capture) {
     framebuffer = fb;
-    if (!processing_frame && !ui_only_frame && capturing_video && (do_capture || sixty_fps_enabled)) {
+    int test = sizeof(void);
+    if (!processing_frame && !ui_only_frame && capturing_video && (do_capture || sixty_fps_enabled) && capture_buffer == 0) {
         uint64_t tex_size = (uint64_t)videores[0] * (uint64_t)videores[1] * 4;
         unsigned char* image = (unsigned char*)malloc(tex_size);
         glBindTexture(GL_TEXTURE_2D, (GLuint)(intptr_t)fb);
@@ -554,6 +609,7 @@ void saturn_imgui_set_frame_buffer(void* fb, bool do_capture) {
         pthread_create(&capture_thread, NULL, saturn_capture_screenshot, image);
         pthread_detach(capture_thread);
     }
+    if (capture_buffer > 0) capture_buffer--;
 }
 
 // Set up ImGui
@@ -690,7 +746,7 @@ void saturn_imgui_open_mario_menu(int index) {
     mario_menu_index = index;
 }
 
-bool is_ffmpeg_installed() {
+bool does_command_exist(std::string command) {
     std::string path = std::string(getenv("PATH"));
 #ifdef _WIN32
     char delimiter = ';';
@@ -710,7 +766,7 @@ bool is_ffmpeg_installed() {
     }
     paths.push_back(word);
     for (std::string p : paths) {
-        std::filesystem::path fsPath = std::filesystem::path(p) / ("ffmpeg" + suffix);
+        std::filesystem::path fsPath = std::filesystem::path(p) / (command + suffix);
         if (std::filesystem::exists(fsPath)) return true;
     }
     return false;
@@ -873,7 +929,7 @@ void saturn_imgui_init() {
     
     saturn_load_project_list();
 
-    ffmpeg_installed = is_ffmpeg_installed();
+    ffmpeg_installed = does_command_exist("ffmpeg");
 
     saturn_check_update();
 }
@@ -1498,18 +1554,22 @@ void saturn_imgui_update() {
                     ImGui::EndTable();
                 }
             }
+            static bool save_to_clipboard = false;
             std::vector<std::string> video_formats = video_renderer_get_formats(ffmpeg_installed);
             ImGui::Separator();
-            if (ImGui::Button("Capture Screenshot (.png)")) {
-                capture_destination_file = save_file_dialog("Save Screenshot", { "PNG image", "*.png" });
+            if (ImGui::Button("Capture Screenshot")) {
+                bool do_capture = false;
+                std::string dest = "";
                 transparency_enabled = checkbox_transparency_enabled;
-                if (!capture_destination_file.empty()) {
-                    capturing_video = true;
-                    keyframe_playing = false;
-                    renderer_num_frames = 0;
+                if (save_to_clipboard) do_capture = true;
+                else {
+                    dest = save_file_dialog("Save Screenshot", { "PNG image", "*.png" });
+                    do_capture = !dest.empty();
                 }
+                if (do_capture) saturn_imgui_capture_next_frame(dest);
             }
             ImGui::SameLine();
+            ImGui::Checkbox("Clipboard", &save_to_clipboard);
             ImGui::BeginDisabled(k_frame_keys.empty());
             if (ImGui::Button("Render Video")) {
                 capture_destination_file = save_file_dialog("Save Video", video_formats);
