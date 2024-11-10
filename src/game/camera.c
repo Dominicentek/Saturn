@@ -11505,11 +11505,7 @@ void fov_default(struct MarioState *m) {
         camera_approach_f32_symmetric_bool(&sFOVState.fov, 30.f, (30.f - sFOVState.fov) / 30.f);
         sStatusFlags |= CAM_FLAG_SLEEPING;
     } else {
-        if (camera_fov_smooth) {
-            camera_approach_f32_symmetric_bool(&sFOVState.fov, camera_default_fov, (camera_default_fov - sFOVState.fov) / 30.f);
-        } else {
-            camera_approach_f32_symmetric_bool(&sFOVState.fov, camera_default_fov, 10.0f);
-        }
+        sFOVState.fov = camera_default_fov;
         sFOVState.unusedIsSleeping = 0;
     }
     if (m->area->camera->cutscene == CUTSCENE_0F_UNUSED) {
