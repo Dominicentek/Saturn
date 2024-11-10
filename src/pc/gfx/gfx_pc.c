@@ -951,9 +951,9 @@ static void gfx_sp_vertex(size_t n_vertices, size_t dest_index, const Vtx *verti
                 V = (int32_t)((doty / 127.0f + 1.0f) / 4.0f * rsp.texture_scaling_factor.t);
             }
         } else {
-            d->color.r = v->cn[0] / (world_light_dir4);
-            d->color.g = v->cn[1] / (world_light_dir4);
-            d->color.b = v->cn[2] / (world_light_dir4);
+            d->color.r = v->cn[0] / (world_light_dir4) * gLightingColor[0];
+            d->color.g = v->cn[1] / (world_light_dir4) * gLightingColor[1];
+            d->color.b = v->cn[2] / (world_light_dir4) * gLightingColor[2];
         }
         
         d->u = U;
