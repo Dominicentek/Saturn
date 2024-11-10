@@ -287,6 +287,14 @@ void append_collision_data(Gfx* dl, int* cur, int* nvt, std::map<void*, int>* of
     }
 }
 
+Collision empty_collision[] = {
+    COL_INIT(),
+    COL_VERTEX_INIT(0),
+    COL_TRI_INIT(SURFACE_DEFAULT, 0),
+    COL_TRI_STOP(),
+    COL_END(),
+};
+
 Collision* create_collision_mesh(struct GraphNode* node) {
     if (node == NULL) return NULL;
     if (node->type == GRAPH_NODE_TYPE_DISPLAY_LIST) {
@@ -401,10 +409,14 @@ void imgui_machinima_quick_options() {
         }
 
         if (gCurrLevelNum == LEVEL_SA) {
+            static bool custom_level_collision = true;
+            ImGui::Separator();
+            ImGui::Checkbox("Collision", &custom_level_collision);
+            imgui_bundled_help_marker("Having collisions on and loading models that\nhave more than 32767 triangles will\ncrash the game.");
             if (ImGui::Checkbox("Load Level Model", &override_level)) {
                 gCurrentArea->terrainData = 
                     override_level && override_level_collision ?
-                        override_level_collision :
+                        (custom_level_collision ? override_level_collision : empty_collision) :
                         gAreas[gCurrAreaIndex].terrainDataOrig;
                 load_area_terrain(gCurrAreaIndex, gCurrentArea->terrainData, gCurrentArea->surfaceRooms, NULL);
             }
@@ -422,7 +434,7 @@ void imgui_machinima_quick_options() {
                             override_level_collision = NULL;
                         }
                         override_level_geolayout = geo;
-                        override_level_collision = create_collision_mesh(geo);
+                        override_level_collision = custom_level_collision ? create_collision_mesh(geo) : empty_collision;
                         gCurrentArea->terrainData = override_level_collision;
                         load_area_terrain(gCurrAreaIndex, gCurrentArea->terrainData, gCurrentArea->surfaceRooms, NULL);
                     }
