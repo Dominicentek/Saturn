@@ -412,7 +412,8 @@ void imgui_machinima_quick_options() {
             static bool custom_level_collision = true;
             ImGui::Separator();
             ImGui::Checkbox("Collision", &custom_level_collision);
-            imgui_bundled_help_marker("Having collisions on and loading models that\nhave more than 32767 triangles will\ncrash the game.");
+            ImGui::SameLine();
+            imgui_bundled_help_marker("Having collisions on and loading models\nthat have more than 32767 triangles will\ncrash the game.\n\nChanges will only apply once you\nreload the model.");
             if (ImGui::Checkbox("Load Level Model", &override_level)) {
                 gCurrentArea->terrainData = 
                     override_level && override_level_collision ?
