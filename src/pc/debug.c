@@ -34,6 +34,8 @@ void close_logger() {
 // Crash handler implementation
 // Based on https://github.com/AloUltraExt/sm64ex-alo/blob/master/src/pc/crash/crash_handler.c
 
+#ifndef OSX_BUILD
+
 #define ARRSIZE(x) (sizeof(x) / sizeof(*(x)))
 #define PTR long long unsigned int)(uintptr_t
 #define ALLOC(x) ((x*)memset(malloc(sizeof(x)), 0, sizeof(x)))
@@ -323,3 +325,7 @@ void init_crash_handler() {
     sigaction(SIGSEGV, &signal_handler, NULL);
 #endif
 }
+
+#else
+void init_crash_handler() {}
+#endif

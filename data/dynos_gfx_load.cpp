@@ -63,7 +63,7 @@ static void *ReadPointer(FILE *aFile, GfxData *aGfxData, u32 aValue) {
     if (aValue == POINTER_CODE) {
         String _PtrName; _PtrName.Read(aFile);
         u32   _PtrData = ReadBytes<u32>(aFile);
-        void* _Ptr = GetPointerFromData(aGfxData, String("%d_%s", aGfxData->mModelIdentifier, _PtrName).begin(), _PtrData);
+        void* _Ptr = GetPointerFromData(aGfxData, String("%d_%s", aGfxData->mModelIdentifier, _PtrName.begin()).begin(), _PtrData);
         if (!_Ptr) _Ptr = GetPointerFromData(aGfxData, _PtrName, _PtrData);
         if (!_Ptr) sys_fatal("Pointer not found: %s", _PtrName.begin());
         return _Ptr;
@@ -96,7 +96,7 @@ static void LoadTextureData(FILE *aFile, GfxData *aGfxData) {
 
     // Name
     _Node->mName.Read(aFile);
-    _Node->mName = String("%d_%s", aGfxData->mModelIdentifier, _Node->mName);
+    _Node->mName = String("%d_%s", aGfxData->mModelIdentifier, _Node->mName.begin());
 
     // Data
     _Node->mData = New<TexData>();

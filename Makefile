@@ -28,7 +28,7 @@ TARGET_RPI ?= 0
 TARGET_WEB ?= 0
 
 # Makeflag to enable OSX fixes
-OSX_BUILD ?= 0
+OSX_BUILD ?= 1
 
 # Enable -no-pie linker option
 NO_PIE ?= 1
@@ -83,6 +83,15 @@ BASEPACK ?= base.zip
 WINDOWS_BUILD ?= 0
 
 # Enable MINGW64 cross compilation mode on Linux (using quasi-msys2)
+
+ifeq ($(OSX_BUILD),1)
+  CROSS := x86_64-apple-$(OSXCROSS_TARGET)-
+  MACOSX_DEPLOYMENT_TARGET := 10.15
+  DISCORDRPC := 0
+  DISCORDGAMESDK := 0
+  CC := $(CROSS)gcc
+  CXX := $(CROSS)g++
+endif
 
 CROSS_COMPILE ?= 0
 
@@ -294,7 +303,7 @@ EXE := $(BUILD_DIR)/$(TARGET).html
     UPDATE_TOOL_FLAGS := -static `pkg-config --static --cflags --libs sdl2 libzip` -lurlmon
 
 		else # Linux builds/binary namer
-    UPDATE_TOOL_FLAGS := -lSDL2 -lzip -lcurl
+    UPDATE_TOOL_FLAGS := $(shell $(CROSS)pkg-config --cflags --libs sdl2 libzip) -lcurl
 		ifeq ($(TARGET_RPI),1)
 			EXE := $(BUILD_DIR)/$(TARGET).arm
       UPDATE_TOOL := $(BUILD_DIR)/updatetool.arm
@@ -500,9 +509,9 @@ include dynos.mk
 
 AS := $(CROSS)as
 
-ifeq ($(OSX_BUILD),1)
-AS := i686-w64-mingw32-as
-endif
+#ifeq ($(OSX_BUILD),1)
+#AS := i686-w64-mingw32-as
+#endif
 
 ifneq ($(TARGET_WEB),1) # As in, not-web PC port
   CC ?= $(CROSS)gcc
@@ -544,12 +553,12 @@ ifeq ($(WINDOWS_BUILD),1) # fixes compilation in MXE on Linux and WSL
   CPP := cpp -P
   OBJCOPY := objcopy
   OBJDUMP := $(CROSS)objdump
-else ifeq ($(OSX_BUILD),1)
-  CPP := cpp-9 -P
-  OBJDUMP := i686-w64-mingw32-objdump
-  OBJCOPY := i686-w64-mingw32-objcopy
+#else ifeq ($(OSX_BUILD),1)
+#  CPP := cpp-9 -P
+#  OBJDUMP := i686-w64-mingw32-objdump
+#  OBJCOPY := i686-w64-mingw32-objcopy
 else # Linux & other builds
-  CPP := $(CROSS)cpp -P
+  CPP := cpp -P
   OBJCOPY := $(CROSS)objcopy
   OBJDUMP := $(CROSS)objdump
 endif
@@ -581,7 +590,7 @@ else ifeq ($(findstring SDL,$(WINDOW_API)),SDL)
   else ifeq ($(TARGET_RPI),1)
     BACKEND_LDFLAGS += -lGLESv2
   else ifeq ($(OSX_BUILD),1)
-    BACKEND_LDFLAGS += -framework OpenGL `pkg-config --libs glew`
+    BACKEND_LDFLAGS += -framework OpenGL $(shell $(CROSS)pkg-config --libs glew)
   else
     BACKEND_LDFLAGS += -lGL
   endif
@@ -1134,6 +1143,9 @@ $(EXE): $(O_FILES) $(MIO0_FILES:.mio0=.o) $(SOUND_OBJ_FILES) $(ULTRA_O_FILES) $(
 	$(LD) -L $(BUILD_DIR) -o $@ $(O_FILES) $(SOUND_OBJ_FILES) $(ULTRA_O_FILES) $(GODDARD_O_FILES) $(LDFLAGS)
   ifeq ($(WINDOWS_BUILD),1)
 	  $(OBJDUMP) -t $(EXE) > $(SYMBOL_MAP)
+  endif
+  ifeq ($(OSX_BUILD),1)
+	  ./osxcross-patch-exe.sh $(BUILD_DIR) $(EXE)
   endif
 
 $(UPDATE_TOOL): $(UPDATE_TOOL_SOURCE)
