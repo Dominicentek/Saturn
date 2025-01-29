@@ -1336,6 +1336,10 @@ static void gfx_dp_set_tile(uint8_t fmt, uint32_t siz, uint32_t line, uint32_t t
     if (tile == G_TX_LOADTILE) {
         rdp.texture_to_load.tile_number = tmem / 256;
     }
+
+    if (tile == 6) {
+        rdp.texture_to_load.tile_number = 1;
+    }
 }
 
 static void gfx_dp_set_tile_size(uint8_t tile, uint16_t uls, uint16_t ult, uint16_t lrs, uint16_t lrt) {
@@ -1350,14 +1354,12 @@ static void gfx_dp_set_tile_size(uint8_t tile, uint16_t uls, uint16_t ult, uint1
 }
 
 static void gfx_dp_load_tlut(uint8_t tile, uint32_t high_index) {
-    SUPPORT_CHECK(tile == G_TX_LOADTILE);
     SUPPORT_CHECK(rdp.texture_to_load.siz == G_IM_SIZ_16b);
     rdp.palette = rdp.texture_to_load.addr;
 }
 
 static void gfx_dp_load_block(uint8_t tile, uint32_t uls, uint32_t ult, uint32_t lrs, uint32_t dxt) {
     if (tile == 1) return;
-    SUPPORT_CHECK(tile == G_TX_LOADTILE);
     SUPPORT_CHECK(uls == 0);
     SUPPORT_CHECK(ult == 0);
     
@@ -1385,8 +1387,6 @@ static void gfx_dp_load_block(uint8_t tile, uint32_t uls, uint32_t ult, uint32_t
 }
 
 static void gfx_dp_load_tile(uint8_t tile, uint32_t uls, uint32_t ult, uint32_t lrs, uint32_t lrt) {
-    if (tile == 1) return;
-    SUPPORT_CHECK(tile == G_TX_LOADTILE);
     SUPPORT_CHECK(uls == 0);
     SUPPORT_CHECK(ult == 0);
 

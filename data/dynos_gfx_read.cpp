@@ -1070,6 +1070,7 @@ static void ParseGfxSymbol(GfxData* aGfxData, DataNode<Gfx>* aNode, Gfx*& aHead,
     gfx_symbol_4(gsSP1Triangle);
     gfx_symbol_8(gsSP2Triangles);
     gfx_symbol_1(gsSPNumLights, false);
+    gfx_symbol_2(gsSPCullDisplayList, false);
     gfx_symbol_1(gsDPSetDepthSource, false);
     gfx_symbol_1(gsDPSetTextureLUT, false);
     gfx_symbol_2(gsDPLoadTLUTCmd, false);
