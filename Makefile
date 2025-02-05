@@ -28,7 +28,7 @@ TARGET_RPI ?= 0
 TARGET_WEB ?= 0
 
 # Makeflag to enable OSX fixes
-OSX_BUILD ?= 1
+OSX_BUILD ?= 0
 
 # Enable -no-pie linker option
 NO_PIE ?= 1
@@ -89,8 +89,8 @@ ifeq ($(OSX_BUILD),1)
   MACOSX_DEPLOYMENT_TARGET := 10.15
   DISCORDRPC := 0
   DISCORDGAMESDK := 0
-  CC := $(CROSS)gcc
-  CXX := $(CROSS)g++
+  CC := $(CROSS)clang
+  CXX := $(CROSS)clang++
 endif
 
 CROSS_COMPILE ?= 0

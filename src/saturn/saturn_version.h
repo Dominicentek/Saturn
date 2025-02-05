@@ -4,7 +4,7 @@
 #define VERSION_STAGE DEVSTAGE_RELEASE
 #define VERSION_MAJOR 6
 #define VERSION_MINOR 2
-#define VERSION_PATCH 2
+#define VERSION_PATCH 3
 
 #define _STR(x) #x
 #define STR(x) _STR(x)

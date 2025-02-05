@@ -1575,6 +1575,7 @@ void saturn_imgui_update() {
                 }
             }
             static bool save_to_clipboard = false;
+            static int selected_video_format = 0;
             std::vector<std::string> video_formats = video_renderer_get_formats(ffmpeg_installed);
             ImGui::Separator();
             if (!clipboard_enabled) {
@@ -1601,6 +1602,9 @@ void saturn_imgui_update() {
             if (ImGui::Button("Render Video")) {
                 capture_destination_file = save_file_dialog("Save Video", video_formats);
                 if (!capture_destination_file.empty()) {
+                    std::filesystem::path path = std::filesystem::path(capture_destination_file);
+                    if (!path.has_extension()) path.replace_extension(video_formats[selected_video_format]);
+                    capture_destination_file = std::filesystem::absolute(path).string();
                     saturn_set_video_destination(capture_destination_file);
                     transparency_enabled = checkbox_transparency_enabled;
                     sixty_fps_enabled = checkbox_sixty_fps_enabled;
@@ -1612,6 +1616,14 @@ void saturn_imgui_update() {
                     renderer_num_frames = saturn_keyframe_get_length() * (sixty_fps_enabled ? 2 : 1);
                     video_renderer_init(videores[0], videores[1], sixty_fps_enabled);
                 }
+            }
+            ImGui::SameLine();
+            ImGui::SetNextItemWidth(100);
+            if (ImGui::BeginCombo("##video_format", video_formats[selected_video_format].c_str())) {
+                for (int i = 0; i < video_formats.size(); i++) {
+                    if (ImGui::Selectable(video_formats[i].c_str(), selected_video_format == i)) selected_video_format = i;
+                }
+                ImGui::EndCombo();
             }
             ImGui::EndDisabled();
         }

@@ -156,13 +156,11 @@ std::vector<std::string> video_renderer_get_formats(bool ffmpeg) {
     std::vector<std::string> formats = {};
     if (ffmpeg) for (int i = 0; i < video_renderers.size(); i++) {
         if (!(std::get<3>(video_renderers[i].second) & VIDEO_RENDERER_FLAGS_FFMPEG)) continue;
-        formats.push_back(video_renderers[i].first.second);
-        formats.push_back("*." + video_renderers[i].first.first);
+        formats.push_back("." + video_renderers[i].first.first);
     }
     for (int i = 0; i < video_renderers.size(); i++) {
         if (std::get<3>(video_renderers[i].second) & VIDEO_RENDERER_FLAGS_FFMPEG) continue;
-        formats.push_back(video_renderers[i].first.second);
-        formats.push_back("*." + video_renderers[i].first.first);
+        formats.push_back("." + video_renderers[i].first.first);
     }
     return formats;
 }
